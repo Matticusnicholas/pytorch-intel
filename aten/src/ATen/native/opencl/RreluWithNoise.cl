@@ -1,0 +1,199 @@
+// AI-TRANSLATED: This file was automatically translated from CUDA to SYCL/OpenCL
+// for Intel GPU (Arc/Xe) support. Requires hardware validation on Intel Arc GPU.
+// Source: aten/src/ATen/native/cuda/RreluWithNoise.cu
+
+#define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+#include <ATen/core/Tensor.h>
+#include <ATen/sycl/SYCLGeneratorImpl.h>
+#include <ATen/native/sycl/DistributionTemplates.h>
+#include <ATen/native/Resize.h>
+
+#ifndef AT_PER_OPERATOR_HEADERS
+#include <ATen/Functions.h>
+#include <ATen/NativeFunctions.h>
+#else
+#include <ATen/ops/empty_like.h>
+#include <ATen/ops/leaky_relu.h>
+#include <ATen/ops/rrelu_with_noise_native.h>
+#endif
+
+
+namespace at::native {
+
+template <typename scalar_t, int unroll_factor, typename F>
+// SYCL: launch bounds
+C10_LAUNCH_BOUNDS_2(256, 4)
+/* SYCL kernel */ void rrelu_with_noise_opencl_kernel(
+    int numel,
+    PhiloxSYCLState philox_args,
+    scalar_t* output,
+    const scalar_t* input,
+    scalar_t* noise,
+    double lower,
+    double upper,
+    const F& random_func) {
+  auto seeds = at::sycl::philox::unpack(philox_args);
+  int idx = item.get_group(0) * item.get_local_range(0) + item.get_local_id(0);
+  // SYCL: use oneMKL RNG engine
+    sycl_philox_state_t state;
+  // SYCL: initialize RNG
+    sycl_rng_init(std::get<0>(seeds),
+              idx,
+              std::get<1>(seeds),
+              &state);
+
+  int grid_stride = item.get_local_range(0) * item.get_group_range(0) * unroll_factor;
+  int rounded_size = ((numel - 1) / grid_stride + 1) * grid_stride;
+  double range = upper - lower;
+
+  for (int linear_index = idx; linear_index < rounded_size; linear_index += grid_stride) {
+    auto rand = random_func(&state);
+
+    // ensure that (&rand.x)[ii] is safe
+    static_assert(sizeof(rand)/sizeof(rand.x) == unroll_factor, "");
+
+    #pragma unroll
+    for (int ii = 0; ii < unroll_factor; ii++) {
+      int li = linear_index + item.get_local_range(0) * item.get_group_range(0) * ii;
+      if (li >= numel) {
+        continue;
+      }
+      scalar_t r = static_cast<scalar_t>((&rand.x)[ii]);
+      r = r * range + lower;
+      if (input[li] <= 0) {
+        output[li] = input[li] * r;
+        noise[li] = r;
+      } else {
+        output[li] = input[li];
+        noise[li] = static_cast<scalar_t>(1);
+      }
+    }
+    item.barrier(sycl::access::fence_space::local_space);
+  }
+}
+
+template <typename scalar_t>
+inline void _rrelu_with_noise_cuda_train(
+    Tensor& output,
+    const Tensor& input_,
+    Tensor& noise_,
+    const Scalar& lower_,
+    const Scalar& upper_,
+    std::optional<Generator> generator) {
+  auto input = input_.contiguous();
+  auto noise = noise_.contiguous();
+  Tensor tmp_output = output.contiguous();
+
+  int64_t numel = input.numel();
+  const int unroll_factor = std::is_same_v<scalar_t, double> ? 2 : 4;
+  auto [counter_offset, grid, block] = calc_execution_policy(numel, unroll_factor);
+
+  auto gen = get_generator_or_default<SYCLGeneratorImpl>(
+      generator, cuda::detail::getDefaultSYCLGenerator());
+  PhiloxSYCLState rng_engine_inputs;
+  {
+    // See Note [Acquire lock when using random generators]
+    std::lock_guard<std::mutex> lock(gen->mutex_);
+    rng_engine_inputs = gen->philox_cuda_state(counter_offset);
+  }
+
+  const scalar_t* input_data = input.const_data_ptr<scalar_t>();
+  scalar_t* noise_data = noise.mutable_data_ptr<scalar_t>();
+  scalar_t* output_data = tmp_output.mutable_data_ptr<scalar_t>();
+
+  double lower = lower_.to<double>();
+  double upper = upper_.to<double>();
+
+  auto stream = at::sycl::getCurrentSYCLStream();
+
+  if (std::is_same_v<scalar_t, double>) {
+    rrelu_with_noise_opencl_kernel<scalar_t, 2>/* SYCL: kernel launch with nd_range(grid, block, 0, stream) */(
+        numel,
+        rng_engine_inputs,
+        output_data,
+        input_data,
+        noise_data,
+        lower,
+        upper,
+        [] (// SYCL: use oneMKL RNG engine
+    sycl_philox_state_t* state) {
+          return curand_uniform2_double(state);
+        });
+        // SYCL: kernel launch check handled by SYCL runtime;
+  } else {
+    // half and float
+    rrelu_with_noise_opencl_kernel<scalar_t, 4>/* SYCL: kernel launch with nd_range(grid, block, 0, stream) */(
+        numel,
+        rng_engine_inputs,
+        output_data,
+        input_data,
+        noise_data,
+        lower, upper,
+        [] (// SYCL: use oneMKL RNG engine
+    sycl_philox_state_t* state) {
+          return sycl_uniform4(state);
+        });
+        // SYCL: kernel launch check handled by SYCL runtime;
+  }
+
+  if (!output.is_contiguous()) {
+    output.copy_(tmp_output);
+  }
+}
+
+Tensor& rrelu_with_noise_out_opencl(const Tensor& self,
+    Tensor& noise,
+    const Scalar& lower,
+    const Scalar& upper,
+    bool training,
+    std::optional<Generator> generator,
+    Tensor& output) {
+  at::native::resize_output(output, self.sizes());
+
+  if (self.numel() == 0) {
+    return output;
+  }
+
+  TensorArg self_arg{self, "self", 1}, noise_arg{noise, "noise", 2},
+      output_arg{output, "output", 3};
+  checkAllSameGPU("rrelu_with_noise_out_opencl", {self_arg, noise_arg, output_arg});
+
+  if (training) {
+    AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16,
+        self.scalar_type(), "rrelu_with_noise_out_opencl", [&] {
+          _rrelu_with_noise_cuda_train<scalar_t>(
+              output, self, noise, lower, upper, generator);
+        });
+  }
+  else {
+    auto lower_tensor = lower.to<double>();
+    auto upper_tensor = upper.to<double>();
+    Scalar negative_slope = (lower_tensor + upper_tensor) / 2;
+    at::leaky_relu_out(output, self, negative_slope);
+  }
+  return output;
+}
+
+Tensor rrelu_with_noise_cuda(
+    const Tensor& self,
+    Tensor& noise,
+    const Scalar& lower,
+    const Scalar& upper,
+    bool training,
+    std::optional<Generator> generator) {
+  Tensor output = at::empty_like(self, LEGACY_CONTIGUOUS_MEMORY_FORMAT);
+  return at::native::rrelu_with_noise_out_opencl(self, noise, lower, upper, training, generator, output);
+}
+
+Tensor& rrelu_with_noise_cuda_(
+    Tensor& self,
+    Tensor& noise,
+    const Scalar& lower,
+    const Scalar& upper,
+    bool training,
+    std::optional<Generator> generator) {
+  return at::native::rrelu_with_noise_out_opencl(
+      self, noise, lower, upper, training, generator, self);
+}
+
+}  // namespace at::native
