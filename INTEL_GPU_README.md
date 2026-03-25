@@ -24,7 +24,24 @@ See `aten/src/ATen/native/opencl/translation_log.json` for per-file status:
 - **11 partial** — translated with some sections needing manual work
 - **34 needs_review** — complex kernels (warp shuffles, shared memory patterns, >500 lines)
 
-## Prerequisites
+## Quick Install (One-Click)
+
+### Linux (Ubuntu 22.04/24.04)
+```bash
+chmod +x install_intel_gpu.sh
+./install_intel_gpu.sh
+```
+
+### Windows
+```
+Right-click install_intel_gpu.bat → Run as Administrator
+```
+
+Both scripts handle everything: GPU drivers, Intel oneAPI toolkit, Python deps, and building PyTorch with `USE_OPENCL=1`. Takes 30-60 minutes depending on your system.
+
+## Manual Install
+
+### Prerequisites
 
 ### Hardware
 - Intel Arc A-series GPU (A770, A750, A580, A380, etc.) or
