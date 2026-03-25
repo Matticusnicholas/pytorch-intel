@@ -18,7 +18,7 @@ namespace at::native {
 
 // See note [Jiterator]
 constexpr char gcd_name[] = "gcd";
-void gcd_kernel_cuda(TensorIteratorBase& iter) {
+void gcd_kernel_opencl(TensorIteratorBase& iter) {
   // SYCL: Using direct kernel dispatch (no JIT)
     AT_DISPATCH_INTEGRAL_TYPES(iter.common_dtype(), "gcd_opencl", [&]() {
       sycl_kernel(iter, [] SYCL_LAMBDA (scalar_t a, scalar_t b) -> scalar_t {
@@ -29,7 +29,7 @@ void gcd_kernel_cuda(TensorIteratorBase& iter) {
 
 // See note [Jiterator]
 constexpr char lcm_name[] = "lcm";
-void lcm_kernel_cuda(TensorIteratorBase& iter) {
+void lcm_kernel_opencl(TensorIteratorBase& iter) {
   // SYCL: Using direct kernel dispatch (no JIT)
     AT_DISPATCH_INTEGRAL_TYPES(iter.common_dtype(), "lcm_opencl", [&]() {
       sycl_kernel(iter, [] SYCL_LAMBDA (scalar_t a, scalar_t b) -> scalar_t {

@@ -183,7 +183,7 @@ std::vector<Tensor> all_types_complex_half_bfloat16(
     FUNCTION##_<OP>(tensors1, tensors2);                            \
   }                                                                 \
                                                                     \
-  std::vector<Tensor> foreach_tensor_##NAME##_list_kernel_cuda(     \
+  std::vector<Tensor> foreach_tensor_##NAME##_list_kernel_opencl(     \
       TensorList tensors1, TensorList tensors2) {                   \
     check_foreach_api_restrictions(tensors1, tensors2);             \
     if (!can_use_fast_route(tensors1, tensors2, DIVISION_OP)) {     \
@@ -206,7 +206,7 @@ std::vector<Tensor> all_types_complex_half_bfloat16(
     FUNCTION##_<OP>(tensors1, tensors2, alpha);                        \
   }                                                                    \
                                                                        \
-  std::vector<Tensor> foreach_tensor_##NAME##_list_kernel_cuda(        \
+  std::vector<Tensor> foreach_tensor_##NAME##_list_kernel_opencl(        \
       TensorList tensors1, TensorList tensors2, const Scalar& alpha) { \
     check_foreach_api_restrictions(tensors1, tensors2);                \
     if (!can_use_fast_route({tensors1, tensors2}, alpha)) {            \

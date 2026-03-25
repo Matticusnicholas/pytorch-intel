@@ -117,10 +117,10 @@ void foreach_binary_op_(
     FUNCTION##_<OP>(tensors, scalar);                                    \
   }                                                                      \
                                                                          \
-  std::vector<Tensor> foreach_tensor_##NAME##_tensor_kernel_cuda(        \
+  std::vector<Tensor> foreach_tensor_##NAME##_tensor_kernel_opencl(        \
       TensorList tensors, const Tensor& scalar) {                        \
     if (scalar.device().type() == DeviceType::CPU) {                     \
-      return at::native::foreach_tensor_##NAME##_scalar_kernel_cuda(     \
+      return at::native::foreach_tensor_##NAME##_scalar_kernel_opencl(     \
           tensors, scalar.item());                                       \
     }                                                                    \
     check_foreach_api_restrictions(tensors);                             \
@@ -147,7 +147,7 @@ void foreach_binary_op_(
     FUNCTION##_<OP>(tensors, scalar, alpha);                           \
   }                                                                    \
                                                                        \
-  std::vector<Tensor> foreach_tensor_##NAME##_tensor_kernel_cuda(      \
+  std::vector<Tensor> foreach_tensor_##NAME##_tensor_kernel_opencl(      \
       TensorList tensors, const Tensor& scalar, const Scalar& alpha) { \
     check_foreach_api_restrictions(tensors);                           \
     if (!(can_use_fast_route(ArrayRef<TensorList>{tensors}, alpha) &&  \

@@ -156,7 +156,7 @@ void all_types_complex_half_bfloat16_(
     FUNCTION##_<OP>(tensors, scalars);                                    \
   }                                                                       \
                                                                           \
-  std::vector<Tensor> foreach_tensor_##NAME##_scalarlist_kernel_cuda(     \
+  std::vector<Tensor> foreach_tensor_##NAME##_scalarlist_kernel_opencl(     \
       TensorList tensors, at::ArrayRef<Scalar> scalars) {                 \
     check_foreach_api_restrictions(tensors, scalars);                     \
     if (!can_use_fast_route(tensors, scalars, DIV_OP)) {                  \
@@ -214,7 +214,7 @@ void foreach_tensor_sub_scalarlist_kernel_cuda_(
       [&]() { foreach_binary_op_<scalar_t, std::minus>(tensors, scalars); });
 }
 
-std::vector<Tensor> foreach_tensor_sub_scalarlist_kernel_cuda(
+std::vector<Tensor> foreach_tensor_sub_scalarlist_kernel_opencl(
     TensorList tensors,
     at::ArrayRef<Scalar> scalars) {
   check_foreach_api_restrictions(tensors, scalars);

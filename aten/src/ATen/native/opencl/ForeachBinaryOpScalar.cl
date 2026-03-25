@@ -153,7 +153,7 @@ void all_types_complex_half_bfloat16_(
     FUNCTION##_<OP>(tensors, scalar);                                 \
   }                                                                   \
                                                                       \
-  std::vector<Tensor> foreach_tensor_##NAME##_scalar_kernel_cuda(     \
+  std::vector<Tensor> foreach_tensor_##NAME##_scalar_kernel_opencl(     \
       TensorList tensors, const Scalar& scalar) {                     \
     check_foreach_api_restrictions(tensors);                          \
     if (!can_use_fast_route(tensors, scalar, DIVISION_OP)) {          \
@@ -180,7 +180,7 @@ FOREACH_BINARY_OP_SCALAR(
     pow,
     power_functor,
     /*div_op*/ true);
-std::vector<Tensor> foreach_scalar_pow_list_kernel_cuda(
+std::vector<Tensor> foreach_scalar_pow_list_kernel_opencl(
     const Scalar& scalar,
     TensorList exponent) {
   check_foreach_api_restrictions(exponent);
@@ -223,7 +223,7 @@ void foreach_tensor_div_scalar_kernel_cuda_(
       tensors, scalar_reciprocal(scalar));
 }
 
-std::vector<Tensor> foreach_tensor_div_scalar_kernel_cuda(
+std::vector<Tensor> foreach_tensor_div_scalar_kernel_opencl(
     TensorList tensors,
     const Scalar& scalar) {
   check_foreach_api_restrictions(tensors);
@@ -257,7 +257,7 @@ void foreach_tensor_sub_scalar_kernel_cuda_(
       [&]() { foreach_binary_op_<scalar_t, std::minus>(tensors, scalar); });
 }
 
-std::vector<Tensor> foreach_tensor_sub_scalar_kernel_cuda(
+std::vector<Tensor> foreach_tensor_sub_scalar_kernel_opencl(
     TensorList tensors,
     const Scalar& scalar) {
   check_foreach_api_restrictions(tensors);

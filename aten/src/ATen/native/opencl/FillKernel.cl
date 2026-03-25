@@ -22,7 +22,7 @@ struct FillFunctor {
     scalar_t value;
 };
 
-void fill_kernel_cuda(TensorIterator& iter, const Scalar& value) {
+void fill_kernel_opencl(TensorIterator& iter, const Scalar& value) {
   AT_DISPATCH_V2(iter.dtype(), "fill_opencl", AT_WRAP([&]() {
     sycl_kernel(iter, FillFunctor<scalar_t>(value.to<scalar_t>()));
   }), AT_EXPAND(AT_ALL_TYPES_AND_COMPLEX), kComplexHalf, kBool, kHalf, kBFloat16, AT_EXPAND(AT_FLOAT8_TYPES), AT_EXPAND(AT_BAREBONES_UNSIGNED_TYPES));
