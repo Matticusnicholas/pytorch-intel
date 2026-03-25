@@ -148,6 +148,7 @@ DispatchResult DispatchStubImpl::try_get_call_ptr(
         c10::DeviceType::HIP,
         c10::DeviceType::MPS,
         c10::DeviceType::MTIA,
+        c10::DeviceType::OPENCL,
         c10::DeviceType::XPU,
         c10::DeviceType::HPU,
         c10::DeviceType::PrivateUse1
@@ -200,6 +201,11 @@ DispatchResult DispatchStubImpl::try_get_call_ptr(
 #endif
     case DeviceType::MTIA:
       return mtia_dispatch_ptr != nullptr ? DispatchResult(mtia_dispatch_ptr) : ErrorType::MissingDeviceKernel;
+
+#if defined(USE_OPENCL)
+    case DeviceType::OPENCL:
+      return opencl_dispatch_ptr != nullptr ? DispatchResult(opencl_dispatch_ptr) : ErrorType::MissingDeviceKernel;
+#endif
 
 #if defined(USE_XPU)
     case DeviceType::XPU:
