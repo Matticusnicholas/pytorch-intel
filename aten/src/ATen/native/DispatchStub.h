@@ -44,6 +44,7 @@
 //   - MPS: Apple Silicon GPUs (Metal Performance Shaders)
 //   - MTIA: Meta Training and Inference Devices
 //   - XPU: Intel GPUs
+//   - OpenCL: Intel GPUs (Arc/Xe) via SYCL
 //   - HPU: Reserved for HPU (Intel Gaudi) device types
 //   - PrivateUse1: Reserved for private/custom device types
 //
@@ -194,6 +195,9 @@ struct TORCH_API DispatchStubImpl {
     void* hip_dispatch_ptr;
     void* mps_dispatch_ptr;
     void* mtia_dispatch_ptr;
+  #if defined(USE_OPENCL)
+    void* opencl_dispatch_ptr;
+  #endif
   #if defined(USE_XPU)
     void* xpu_dispatch_ptr;
   #endif
@@ -205,6 +209,9 @@ struct TORCH_API DispatchStubImpl {
     void* hip_dispatch_ptr = nullptr;
     void* mps_dispatch_ptr = nullptr;
     void* mtia_dispatch_ptr = nullptr;
+  #if defined(USE_OPENCL)
+    void* opencl_dispatch_ptr = nullptr;
+  #endif
   #if defined(USE_XPU)
     void* xpu_dispatch_ptr = nullptr;
   #endif
@@ -277,6 +284,12 @@ public:
     void set_mtia_dispatch_ptr(FnPtr fn_ptr) {
     impl.mtia_dispatch_ptr = reinterpret_cast<void*>(fn_ptr);
   }
+
+  #if defined(USE_OPENCL)
+  void set_opencl_dispatch_ptr(FnPtr fn_ptr) {
+    impl.opencl_dispatch_ptr = reinterpret_cast<void*>(fn_ptr);
+  }
+  #endif
 
   void set_privateuse1_dispatch_ptr(FnPtr fn_ptr) {
     impl.privateuse1_dispatch_ptr = reinterpret_cast<void*>(fn_ptr);
@@ -374,6 +387,13 @@ struct RegisterMTIADispatch {
 };
 
 template <typename DispatchStub>
+struct RegisterOpenCLDispatch {
+  RegisterOpenCLDispatch(DispatchStub &stub, typename DispatchStub::FnPtr value) {
+    stub.set_opencl_dispatch_ptr(value);
+  }
+};
+
+template <typename DispatchStub>
 struct RegisterPRIVATEUSE1Dispatch {
   RegisterPRIVATEUSE1Dispatch(DispatchStub &stub, typename DispatchStub::FnPtr value) {
     stub.set_privateuse1_dispatch_ptr(value);
@@ -462,6 +482,9 @@ struct RegisterPRIVATEUSE1Dispatch {
 
 #define REGISTER_MTIA_DISPATCH(name, fn) \
   static RegisterMTIADispatch<struct name##_DECLARE_DISPATCH_type> name ## __register(name, fn);
+
+#define REGISTER_OPENCL_DISPATCH(name, fn) \
+  static RegisterOpenCLDispatch<struct name##_DECLARE_DISPATCH_type> name ## __register(name, fn);
 
 #define REGISTER_PRIVATEUSE1_DISPATCH(name, fn) \
   static RegisterPRIVATEUSE1Dispatch<struct name##_DECLARE_DISPATCH_type> name ## __register(name, fn);

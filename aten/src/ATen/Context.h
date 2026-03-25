@@ -18,6 +18,7 @@
 #include <ATen/detail/MAIAHooksInterface.h>
 #include <ATen/detail/MPSHooksInterface.h>
 #include <ATen/detail/MTIAHooksInterface.h>
+#include <ATen/detail/OpenCLHooksInterface.h>
 #include <ATen/detail/PrivateUse1HooksInterface.h>
 #include <ATen/detail/XLAHooksInterface.h>
 #include <ATen/detail/XPUHooksInterface.h>
@@ -77,6 +78,8 @@ class TORCH_API Context {
     }
     if (opt_device_type == at::kCUDA) {
       return at::detail::getCUDAHooks();
+    } else if (opt_device_type == at::kOpenCL) {
+      return at::detail::getOpenCLHooks();
     } else if (opt_device_type == at::kXPU) {
       return at::detail::getXPUHooks();
     } else if (opt_device_type == at::kMPS) {
