@@ -1226,8 +1226,8 @@
   {
     "file": "layer_norm_kernel.cl",
     "source": "layer_norm_kernel.cu",
-    "status": "pending",
-    "lines": 0
+    "status": "needs_review",
+    "lines": 604
   },
   {
     "file": "legendre_polynomial_p.cl",
