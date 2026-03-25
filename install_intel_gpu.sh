@@ -172,6 +172,11 @@ if [[ "$CURRENT_BRANCH" != "claude/cuda-to-opencl-translation-kl8Ms" && "$CURREN
     warn "On branch '$CURRENT_BRANCH'. Expected 'main' or feature branch."
 fi
 
+log "Initializing git submodules (pybind11, eigen, etc.)..."
+log "This downloads ~2GB of dependencies - may take a few minutes..."
+git submodule update --init --recursive || error "Failed to initialize submodules."
+log "Submodules initialized."
+
 export USE_OPENCL=1
 export USE_CUDA=0
 export USE_ROCM=0
