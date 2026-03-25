@@ -137,6 +137,16 @@ echo.
 
 cd /d "%SCRIPT_DIR%"
 
+echo [INFO] Initializing git submodules (pybind11, eigen, etc.)...
+echo        This downloads ~2GB of dependencies - may take a few minutes...
+git submodule update --init --recursive
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to initialize submodules. Check your internet connection.
+    pause
+    exit /b 1
+)
+echo [INFO] Submodules initialized.
+
 set USE_OPENCL=1
 set USE_CUDA=0
 set USE_ROCM=0
