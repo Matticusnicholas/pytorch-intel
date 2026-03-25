@@ -20,6 +20,7 @@ namespace c10 {
 #define C10_FORALL_BACKEND_DEVICE_TYPES(_, extra) \
   _(CPU, extra)                                   \
   _(CUDA, extra)                                  \
+  _(OpenCL, extra)                                \
   _(HIP, extra)                                   \
   _(XLA, extra)                                   \
   _(MPS, extra)                                   \
@@ -77,6 +78,7 @@ constexpr DeviceType kVE = DeviceType::VE;
 constexpr DeviceType kLazy = DeviceType::Lazy;
 constexpr DeviceType kIPU = DeviceType::IPU;
 constexpr DeviceType kMTIA = DeviceType::MTIA;
+constexpr DeviceType kOpenCL = DeviceType::OPENCL;
 constexpr DeviceType kPrivateUse1 = DeviceType::PrivateUse1;
 
 // define explicit int constant
@@ -120,6 +122,7 @@ using c10::kMeta;
 using c10::kMetal;
 using c10::kMPS;
 using c10::kMTIA;
+using c10::kOpenCL;
 using c10::kPrivateUse1;
 using c10::kVE;
 using c10::kVulkan;

@@ -247,6 +247,7 @@ else()
 endif()
 
 option(USE_CUDA "Use CUDA" ON)
+option(USE_OPENCL "Use OpenCL/SYCL for Intel GPU support" OFF)
 
 option(USE_XPU "Use XPU" ON)
 cmake_dependent_option(
@@ -1338,6 +1339,11 @@ if(USE_CUDA OR USE_ROCM)
   # TODO: check if we should include other cuda dependency libraries to the
   # interface as well.
 
+endif()
+
+if(USE_OPENCL)
+  message(STATUS "OpenCL/SYCL backend for Intel GPU is enabled")
+  add_subdirectory(c10/opencl)
 endif()
 
 # Note(jiayq): when building static libraries, all PRIVATE dependencies will
