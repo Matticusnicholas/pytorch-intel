@@ -148,7 +148,8 @@ echo         USE_OPENCL=1, USE_CUDA=0
 echo         This will take 30-60+ minutes...
 echo.
 
-pip install -e . -v --no-build-isolation 2>&1 | tee build_opencl.log
+pip install -e . -v --no-build-isolation > build_opencl.log 2>&1
+type build_opencl.log | findstr /i "error fatal failed successfully"
 
 if %errorlevel% neq 0 (
     echo [ERROR] Build failed. Check build_opencl.log for details.
